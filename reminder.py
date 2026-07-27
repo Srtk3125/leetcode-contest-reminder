@@ -1,3 +1,4 @@
+print("VERSION 2 - NEW CODE")
 import os
 import requests
 from datetime import datetime
