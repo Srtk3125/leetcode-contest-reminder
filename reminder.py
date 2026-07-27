@@ -1,7 +1,6 @@
-print("VERSION 2 - NEW CODE")
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 import pytz
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -19,14 +18,16 @@ query {
 }
 """
 
+# Fetch upcoming contests
 response = requests.post(
     GRAPHQL_URL,
     json={"query": QUERY},
     timeout=20
 )
 
-data = response.json()
+response.raise_for_status()
 
+data = response.json()
 contests = data.get("data", {}).get("upcomingContests", [])
 
 if not contests:
@@ -35,21 +36,22 @@ if not contests:
 
 contest = contests[0]
 
-from datetime import timezone
-
+# Contest time in UTC
 utc_time = datetime.fromtimestamp(
     contest["startTime"],
     tz=timezone.utc
 )
+
+# Convert to IST
 ist = pytz.timezone("Asia/Kolkata")
-ist_time = pytz.utc.localize(utc_time).astimezone(ist)
+ist_time = utc_time.astimezone(ist)
 
-from datetime import timezone
-
+# Current time
 now = datetime.now(timezone.utc)
 
-seconds_left = (datetime.fromtimestamp(contest["startTime"], tz=timezone.utc) - now).total_seconds()
+seconds_left = (utc_time - now).total_seconds()
 
+# Reminder windows (±60 seconds)
 if not (
     86340 <= seconds_left <= 86460 or   # 24 hours
     3540 <= seconds_left <= 3660 or     # 1 hour
@@ -58,8 +60,21 @@ if not (
 ):
     print("No reminder needed now.")
     exit()
-message = f"""
-🏆 LeetCode Contest
+
+# Reminder text
+if 86340 <= seconds_left <= 86460:
+    reminder = "⏰ Contest starts in 24 Hours!"
+elif 3540 <= seconds_left <= 3660:
+    reminder = "⏰ Contest starts in 1 Hour!"
+elif 1740 <= seconds_left <= 1860:
+    reminder = "⏰ Contest starts in 30 Minutes!"
+else:
+    reminder = "🚀 Contest starts in 10 Minutes!"
+
+# Telegram message
+message = f"""🏆 LeetCode Contest Reminder
+
+{reminder}
 
 📌 {contest['title']}
 
@@ -67,9 +82,12 @@ message = f"""
 🕗 {ist_time.strftime('%I:%M %p IST')}
 
 🔗 https://leetcode.com/contest/{contest['titleSlug']}
+
+Good luck! 🚀
 """
 
-requests.get(
+# Send message
+response = requests.get(
     f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
     params={
         "chat_id": CHAT_ID,
@@ -77,5 +95,7 @@ requests.get(
     },
     timeout=20
 )
+
+response.raise_for_status()
 
 print("Telegram message sent successfully!")
