@@ -35,7 +35,12 @@ if not contests:
 
 contest = contests[0]
 
-utc_time = datetime.utcfromtimestamp(contest["startTime"])
+from datetime import timezone
+
+utc_time = datetime.fromtimestamp(
+    contest["startTime"],
+    tz=timezone.utc
+)
 ist = pytz.timezone("Asia/Kolkata")
 ist_time = pytz.utc.localize(utc_time).astimezone(ist)
 
