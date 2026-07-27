@@ -1,13 +1,14 @@
 import os
 import requests
-from datetime import datetime, timezone
+from datetime import datetime
+import pytz
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
 GRAPHQL_URL = "https://leetcode.com/graphql"
 
-query = """
+QUERY = """
 query {
   upcomingContests {
     title
@@ -17,40 +18,44 @@ query {
 }
 """
 
-try:
-    response = requests.post(
-        GRAPHQL_URL,
-        json={"query": query},
-        timeout=20
-    )
-    data = response.json()
+response = requests.post(
+    GRAPHQL_URL,
+    json={"query": QUERY},
+    timeout=20
+)
 
-    contests = data.get("data", {}).get("upcomingContests", [])
+data = response.json()
 
-    if not contests:
-        print("No upcoming contests found.")
-        exit(0)
+contests = data.get("data", {}).get("upcomingContests", [])
 
-    contest = contests[0]
+if not contests:
+    print("No upcoming contests found.")
+    exit()
 
-    start = datetime.fromtimestamp(contest["startTime"], tz=timezone.utc)
-    message = (
-        "🏆 Upcoming LeetCode Contest\n\n"
-        f"📌 {contest['title']}\n"
-        f"🕒 UTC Time: {start.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
-        f"🔗 https://leetcode.com/contest/{contest['titleSlug']}"
-    )
+contest = contests[0]
 
-    requests.get(
-        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-        params={
-            "chat_id": CHAT_ID,
-            "text": message
-        },
-        timeout=20
-    )
+utc_time = datetime.utcfromtimestamp(contest["startTime"])
+ist = pytz.timezone("Asia/Kolkata")
+ist_time = pytz.utc.localize(utc_time).astimezone(ist)
 
-    print("Telegram message sent!")
+message = f"""
+🏆 LeetCode Contest
 
-except Exception as e:
-    print(e)
+📌 {contest['title']}
+
+📅 {ist_time.strftime('%d %b %Y')}
+🕗 {ist_time.strftime('%I:%M %p IST')}
+
+🔗 https://leetcode.com/contest/{contest['titleSlug']}
+"""
+
+requests.get(
+    f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+    params={
+        "chat_id": CHAT_ID,
+        "text": message
+    },
+    timeout=20
+)
+
+print("Telegram message sent successfully!")
