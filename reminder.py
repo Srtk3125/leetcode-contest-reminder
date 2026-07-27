@@ -39,6 +39,20 @@ utc_time = datetime.utcfromtimestamp(contest["startTime"])
 ist = pytz.timezone("Asia/Kolkata")
 ist_time = pytz.utc.localize(utc_time).astimezone(ist)
 
+from datetime import timezone
+
+now = datetime.now(timezone.utc)
+
+seconds_left = (datetime.fromtimestamp(contest["startTime"], tz=timezone.utc) - now).total_seconds()
+
+if not (
+    86340 <= seconds_left <= 86460 or   # 24 hours
+    3540 <= seconds_left <= 3660 or     # 1 hour
+    1740 <= seconds_left <= 1860 or     # 30 minutes
+    540 <= seconds_left <= 660          # 10 minutes
+):
+    print("No reminder needed now.")
+    exit()
 message = f"""
 🏆 LeetCode Contest
 
