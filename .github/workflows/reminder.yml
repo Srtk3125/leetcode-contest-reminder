@@ -1,0 +1,29 @@
+name: LeetCode Contest Reminder
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # Runs every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install requests python-dateutil
+
+      - name: Run reminder
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python reminder.py
