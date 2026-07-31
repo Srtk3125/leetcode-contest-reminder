@@ -50,14 +50,14 @@ for contest in contests:
 
     seconds_left = (utc_time - now).total_seconds()
 
-    # Check reminder windows
-    if 86340 <= seconds_left <= 86460:
+    # Check reminder windows (10-minute window)
+    if 24 * 3600 - 600 <= seconds_left <= 24 * 3600:
         reminder = "⏰ Contest starts in 24 Hours!"
-    elif 3540 <= seconds_left <= 3660:
+    elif 3600 - 600 <= seconds_left <= 3600:
         reminder = "⏰ Contest starts in 1 Hour!"
-    elif 1740 <= seconds_left <= 1860:
+    elif 1800 - 600 <= seconds_left <= 1800:
         reminder = "⏰ Contest starts in 30 Minutes!"
-    elif 540 <= seconds_left <= 660:
+    elif 600 - 600 <= seconds_left <= 600:
         reminder = "🚀 Contest starts in 10 Minutes!"
     else:
         print(f"No reminder needed for {contest['title']}.")
